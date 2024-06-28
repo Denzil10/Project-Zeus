@@ -22,6 +22,7 @@ def register():
     headers = request.headers.get('username').split()
     username = headers[0]
     referrer_code = headers[1]
+    print(headers)
     # Generate a random referral code
     code_length = 5
     referral_code = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(code_length))
@@ -29,17 +30,13 @@ def register():
     data = request.json
     print(data)
 
-    if not data:
-        app.logger.error("Invalid JSON data received")
-        return jsonify({"replies": [{"message": "❌ Invalid JSON data"}]}), 400
-
     message = data.get('query')
     if not message:
         return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 400
 
-    user_phone = message.get('sender')
+    user_phone = message.get('groupParticipant')
     number = sanitize_phone(user_phone)
-    level = 1 if referrer_code else 0
+    level = 1 if referrer_code !="" else 0
     print(level)
 
     user_ref = db.reference(f'users/{number}')
@@ -83,7 +80,7 @@ def info():
 
 
    
-    number =  sanitize_phone(message.get('sender')) 
+    number =  sanitize_phone(message.get('groupParticipant')) 
     user_ref = db.reference(f'users/{number}')
     user = user_ref.get()
     
@@ -113,7 +110,7 @@ def checkin():
     if not message:
         return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 400
 
-    user_phone = message.get('sender')
+    user_phone = message.get('groupParticipant')
     number = sanitize_phone(user_phone)
     user_ref = db.reference(f'users/{number}')
     user = user_ref.get()
