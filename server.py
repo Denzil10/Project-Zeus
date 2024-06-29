@@ -87,6 +87,14 @@ def register():
 @app.route('/info', methods=['POST'])
 def info():
     
+    data = request.json
+    
+    # collect user details 
+    number =  getNumber(data)
+    print(number)
+    user_ref = db.reference(f'users/{number}')
+    user = user_ref.get()
+    
     if not user:
         return jsonify({"replies": [{"message": "Please register first"}]}), 200
     
@@ -120,20 +128,22 @@ def checkin():
     message = data.get('query')
     if not message:
         return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 400
-
+    
+    # collect details 
     number =  getNumber(data)
     print(number)
     user_ref = db.reference(f'users/{number}')
     user = user_ref.get()
 
+    if not user:
+        return jsonify({"replies": [{"message": "Please register first"}]}), 200
+    
     now = datetime.now(timezone.utc)
     today_date = now.strftime('%Y-%m-%d')
     yes_time = now - timedelta(days=1)
     yes_date =yes_time.strftime('%Y-%m-%d')
 
-    if not user:
-        return jsonify({"replies": [{"message": "Please register first"}]}), 200
-    
+    # checkin logic
     if user['lastCheckInDate'] == today_date:
         msg = f"✅ Check-in has been already done"
     elif user['lastCheckInDate'] != yes_date:
@@ -151,8 +161,18 @@ def checkin():
     user_ref.set(user)
     return jsonify({"replies": [{"message": msg}]}), 200
 
-@app.route('/milestone', methods=['GET'])
+@app.route('/milestone', methods=['POST'])
 def track_milestones():
+    
+    # testing updates 
+    user_id = '699539284744'  
+    user_ref = db.reference(f'users/{user_id}')
+    # Update level
+    user_ref.update({
+        'level': 56
+    })
+    
+    # user_id = '699539284744'  
     
     milestones = {
         'level': [25, 50, 75],
