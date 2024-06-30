@@ -38,50 +38,35 @@ def generate_referral_code():
 def register():
     data = request.json
     query = data.get('query')
-     #user identifier can handle contacts too
-    user_identifier = getUser(query)
-    user_ref = db.reference(f'users/{user_identifier}')
-    user = user_ref.get() 
-    print(user)  
 
     # fetch msg parameters
-    message = query.get('message')
-    if not message:
-        return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 200
-    
+    message = query.get('message')    
     username = re.search(r"register:\s*(\w+)", message).group(1)
-    # referral is optional
-    referrer_code = re.search(r"referral:\s*(\w+)", message)
+    referrer_code = re.search(r"referral:\s*(\w+)", message) #optional referral
     referrer_code = referrer_code.group(1) if referrer_code else ""
-
-    if user!= None:
-        return jsonify({"replies": [{"message": "❌ User already exists"}]}), 200
-    
     referral_code = generate_referral_code()
     
     now = datetime.now(timezone.utc)
-    today_date = now.strftime('%Y-%m-%d')
     yes_time = now - timedelta(days=1)
     yes_date =yes_time.strftime('%Y-%m-%d')
-    
-    # while True: #code to ensure unique referral code, can be used in future
-    #     referral_code = generate_referral_code()
-    #     user = ref.order_by_child('referral_code').equal_to(referral_code)
-    #     print('Generating referral code')
-    #     if(user != None):
-    #        break
 
     level = 0
     if referrer_code != "":
-        user = user_ref.order_by_child('referralCode').equal_to(referrer_code)
-        user = user.get()
-        if len(user) == 0:
+        ref =  db.reference('users').order_by_child('referralCode').equal_to(referrer_code)
+        referrer = ref.get()
+        if len(referrer) == 0:
             return jsonify({"replies": [{"message": "❌ Invalid referral code"}]}), 200
         else:
             level = 1
+    
+    user_identifier = getUser(query)
+    users_ref = db.reference('users').order_by_child('identifier').equal_to(user_identifier)
+    user_snapshot = users_ref.get()
 
-    # initialize user
-    if not user:
+    if user_snapshot:
+        return jsonify({"replies": [{"message": "❌ User already exists"}]}), 200
+    else:
+        # Push data to the database under 'users' node
         user = {
             'identifier': user_identifier,
             'username': username,
@@ -93,14 +78,7 @@ def register():
             'streak': 0,
             'bestStreak': 0
         }
-    else:
-        user.update({
-            'username': username,
-            'level': level,
-            'lastCheckInDate': yes_date
-        })
-
-    user_ref.set(user)
+        db.reference('users').push(user)
 
     response_message = f"🎉 Welcome {user.get('username', '')}!\n Upgraded to lvl {user['level']}🔥"
     return jsonify({"replies": [{"message": response_message}]}), 200
@@ -112,16 +90,16 @@ def info():
     
     # collect user details 
     user_identifier = getUser(query)
-    user_ref = db.reference(f'users/{user_identifier}')
-    user = user_ref.get() 
+    user_ref = db.reference('users').order_by_child('identifier').equal_to(user_identifier)
+    user_snapshot= user_ref.get()
+    user_key = list(user_snapshot.keys())[0]
+    user = user_snapshot[user_key]
     
     if not user:
         return jsonify({"replies": [{"message": "Please register first"}]}), 200
     
     data = request.json
     message = data.get('query')
-    if not message:
-        return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 400
  
     info = (
     "Info😎\n"
@@ -143,12 +121,13 @@ def checkin():
     
     # collect details 
     user_identifier = getUser(query)
-    user_ref = db.reference(f'users/{user_identifier}')
-    user = user_ref.get() 
-
-    if not user:
+    user_ref = db.reference('users').order_by_child('identifier').equal_to(user_identifier)
+    user_snapshot= user_ref.get()
+    if not user_snapshot:
         return jsonify({"replies": [{"message": "Please register first"}]}), 200
-    
+    user_key = list(user_snapshot.keys())[0]
+    user = user_snapshot[user_key]
+
     now = datetime.now(timezone.utc)
     today_date = now.strftime('%Y-%m-%d')
     yes_time = now - timedelta(days=1)
@@ -169,12 +148,11 @@ def checkin():
             user['bestStreak'] = user['streak']
         msg = f"🎉 Reached Lvl {user['level']}"
 
-    user_ref.set(user)
+    db.reference('users').child(user_key).update(user)
     return jsonify({"replies": [{"message": msg}]}), 200
 
 @app.route('/milestone', methods=['POST'])
 def track_milestones():
-    
     # testing updates 
     user_id = '699539284744'  
     user_ref = db.reference(f'users/{user_id}')
@@ -245,6 +223,30 @@ def get_users_with_streak_milestones_today(multiple):
 
     return milestones
 
+# special end points for load distrbition  untested
+@app.route('/other', methods=['POST'])
+def other():
+    data = request.json
+    query = data.get('query')
+    message = query.get('message')
+
+    # Split message into words
+    words = message.split()
+
+    if words:
+        first_word = words[0].lower()
+
+        if first_word == 'register': #use proper regex to avoid syntax errors
+            register(data)
+        elif first_word == 'info':
+            info(data)
+        elif first_word == 'milestone':
+            track_milestones(data)
+
+@app.route('/any_checkin', methods=['POST'])
+def any_checkin():
+    data = request.json
+    checkin(data)    
 
 @app.route('/')
 def index():
