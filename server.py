@@ -140,10 +140,6 @@ def info():
 def checkin():
     data = request.json
     query = data.get('query')
-
-    message = data.get('query')
-    if not message:
-        return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 400
     
     # collect details 
     user_identifier = getUser(query)
@@ -225,9 +221,10 @@ def get_users_with_milestones(field, values):
 
     milestones = {value: [] for value in values}
     for user_id, user_data in all_users.items():
-        if user_data.get(field) in values:
-            milestones[user_data[field]].append(user_data['username'])
-    
+        user_value = user_data.get(field, 0)
+        for value in values:
+            if user_value >= value:
+                milestones[value].append(user_data['username'])
     return milestones
 
 def get_users_with_streak_milestones_today(multiple):
