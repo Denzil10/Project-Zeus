@@ -14,55 +14,76 @@ firebase_admin.initialize_app(cred, {
 })
 
 app = Flask(__name__)
-def sanitize_phone(phone):
-    if phone and not any(char.isdigit() for char in phone):
-        print("It's a saved contact")
-    return re.sub(r'[^0-9]', '', phone)
-
-def getNumber(data):
+def getUser(query):
     # smart detection of number 
-    message = data.get('query')
-    
-    if message.get('isGroup'):
-        user_phone = message.get('groupParticipant')
+    if query.get('isGroup'):
+        user_identifier = query.get('groupParticipant')
     else:
-        user_phone = message.get('sender')
+        user_identifier = query.get('sender')
         
-    number = sanitize_phone(user_phone)
-    print(number)
-    return number
+    # if number then clean    
+    if user_identifier and not any(char.isdigit() for char in user_identifier):
+        print("It's a saved contact") # might have to remove the space 
+    else: 
+        user_identifier = re.sub(r'[^0-9]', '', user_identifier)
+        
+    return user_identifier
+
+def generate_referral_code():
+    code_length = 5
+    referral_code = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(code_length))
+    return referral_code
 
 @app.route('/register', methods=['POST'])
 def register():
-    headers = request.headers.get('username').split()
-    username = headers[0]
-    referrer_code = headers[1]
-    print(headers)
-    # Generate a random referral code
-    referral_code = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(4))
     data = request.json
-    print(data)
+    query = data.get('query')
+     #user identifier can handle contacts too
+    user_identifier = getUser(query)
+    user_ref = db.reference(f'users/{user_identifier}')
+    user = user_ref.get() 
+    print(user)  
 
-    message = data.get('query')
+    # fetch msg parameters
+    message = query.get('message')
     if not message:
-        return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 400
-
-    # set level    
-    level = 1 if referrer_code !="%capturing_group_2%" else 0
+        return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 200
     
-    number = getNumber(data)
-    user_ref = db.reference(f'users/{number}')
-    user = user_ref.get()
+    username = re.search(r"register:\s*(\w+)", message).group(1)
+    # referral is optional
+    referrer_code = re.search(r"referral:\s*(\w+)", message)
+    referrer_code = referrer_code.group(1) if referrer_code else ""
+
+    if user!= None:
+        return jsonify({"replies": [{"message": "❌ User already exists"}]}), 200
+    
+    referral_code = generate_referral_code()
     
     now = datetime.now(timezone.utc)
     today_date = now.strftime('%Y-%m-%d')
     yes_time = now - timedelta(days=1)
     yes_date =yes_time.strftime('%Y-%m-%d')
+    
+    # while True: #code to ensure unique referral code, can be used in future
+    #     referral_code = generate_referral_code()
+    #     user = ref.order_by_child('referral_code').equal_to(referral_code)
+    #     print('Generating referral code')
+    #     if(user != None):
+    #        break
+
+    level = 0
+    if referrer_code != "":
+        user = user_ref.order_by_child('referralCode').equal_to(referrer_code)
+        user = user.get()
+        if len(user) == 0:
+            return jsonify({"replies": [{"message": "❌ Invalid referral code"}]}), 200
+        else:
+            level = 1
 
     # initialize user
     if not user:
         user = {
-            'phone': number,
+            'identifier': user_identifier,
             'username': username,
             'referrerCode': referrer_code,
             'level': level,
@@ -86,14 +107,13 @@ def register():
 
 @app.route('/info', methods=['POST'])
 def info():
-    
     data = request.json
+    query = data.get('query')
     
     # collect user details 
-    number =  getNumber(data)
-    print(number)
-    user_ref = db.reference(f'users/{number}')
-    user = user_ref.get()
+    user_identifier = getUser(query)
+    user_ref = db.reference(f'users/{user_identifier}')
+    user = user_ref.get() 
     
     if not user:
         return jsonify({"replies": [{"message": "Please register first"}]}), 200
@@ -102,12 +122,7 @@ def info():
     message = data.get('query')
     if not message:
         return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 400
-
-   
-    number =  getNumber(data)
-    user_ref = db.reference(f'users/{number}')
-    user = user_ref.get()
-    
+ 
     info = (
     "Info😎\n"
     f"Username: {user['username']}\n"
@@ -124,16 +139,16 @@ def info():
 @app.route('/checkin', methods=['POST'])
 def checkin():
     data = request.json
+    query = data.get('query')
 
     message = data.get('query')
     if not message:
         return jsonify({"replies": [{"message": "❌ Invalid message type"}]}), 400
     
     # collect details 
-    number =  getNumber(data)
-    print(number)
-    user_ref = db.reference(f'users/{number}')
-    user = user_ref.get()
+    user_identifier = getUser(query)
+    user_ref = db.reference(f'users/{user_identifier}')
+    user = user_ref.get() 
 
     if not user:
         return jsonify({"replies": [{"message": "Please register first"}]}), 200
