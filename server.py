@@ -1,11 +1,14 @@
 
-from flask import Flask, request, jsonify
 import firebase_admin
 from firebase_admin import credentials, db
 from datetime import datetime, timezone, timedelta
 import re
 import secrets
 import string
+from flask import Flask, request, redirect, session, url_for, jsonify
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("credentials.json") 
@@ -14,14 +17,20 @@ firebase_admin.initialize_app(cred, {
 })
 
 app = Flask(__name__)
+app.secret_key = 'zeus'  # Replace with a random secret key
+
+# Path to the OAuth 2.0 client secrets file
+CLIENT_SECRETS_FILE = './oauth.json'
+SCOPES = ['https://www.googleapis.com/auth/contacts']
+
 def getUser(query):
-    print(query)
     # smart detection of number 
     if query.get('isGroup'):
-        user_identifier = query.get('sender')
-    else:
         user_identifier = query.get('groupParticipant')
+    else:
+        user_identifier = query.get('sender')
         
+    print(user_identifier)
     # if number then clean    
     if user_identifier and not any(char.isdigit() for char in user_identifier):
         print("It's a saved contact") # might have to remove the space 
@@ -36,8 +45,10 @@ def generate_referral_code():
     return referral_code
 
 @app.route('/register', methods=['POST'])
-def register():
-    data = request.json
+def register(data):
+    if(not data):
+        data = request.json
+             
     query = data.get('query')
 
     # fetch msg parameters
@@ -61,11 +72,12 @@ def register():
             level = 1
     
     user_identifier = getUser(query)
+    save_contact(user_identifier)   
     users_ref = db.reference('users').order_by_child('identifier').equal_to(user_identifier)
     user_snapshot = users_ref.get()
 
     if user_snapshot:
-        return jsonify({"replies": [{"message": "❌ User already exists"}]}), 200
+        return jsonify({"replies": [{"message": "❌ You have already registered"}]}), 200
     else:
         # Push data to the database under 'users' node
         user = {
@@ -82,33 +94,32 @@ def register():
         db.reference('users').push(user)
         
         info = (
-        "User Card😎\n"
+        "*User Card😎*\n"
+         f"Identifier: {user['identifier']} (we have saved your whatsapp name changing it will reset progress)\n"
         f"Level: {user['level']}\n"
         f"Best Streak: {user['bestStreak']}\n"
         f"Referral Code: {user['referralCode']} (note it down)\n"
         )
 
-    response_message = f"🎉 Welcome {user.get('username', '')}!\n Upgraded to lvl {user['level']}🔥\n"
+    response_message = f"🎉 Welcome {user.get('username', '')}!\n Upgraded to lvl {user['level']}🔥\n\n"
     return jsonify({"replies": [{"message": response_message + info}]}), 200
 
 @app.route('/info', methods=['POST'])
-def info():
-    data = request.json
+def info(data):
+    if(not data):
+        data = request.json
+    
     query = data.get('query')
     
     # collect user details 
     user_identifier = getUser(query)
     user_ref = db.reference('users').order_by_child('identifier').equal_to(user_identifier)
     user_snapshot= user_ref.get()
-    user_key = list(user_snapshot.keys())[0]
-    user = user_snapshot[user_key]
-    
     if not user_snapshot:
         return jsonify({"replies": [{"message": "Please register first"}]}), 200
-    
-    data = request.json
-    message = data.get('query')
- 
+    user_key = list(user_snapshot.keys())[0]
+    user = user_snapshot[user_key]
+     
     info = (
         "Info😎\n"
         f"Username: {user['username']}\n"
@@ -123,12 +134,14 @@ def info():
     return jsonify({"replies": [{"message": response_message}]}), 200
 
 @app.route('/checkin', methods=['POST'])
-def checkin():
-    data = request.json
+def checkin(data):
+    if(not data):
+        data = request.json
     query = data.get('query')
     
     # collect details 
     user_identifier = getUser(query)
+    save_contact(data)
     user_ref = db.reference('users').order_by_child('identifier').equal_to(user_identifier)
     user_snapshot= user_ref.get()
     if not user_snapshot:
@@ -143,7 +156,7 @@ def checkin():
 
     # checkin logic
     if user['lastCheckInDate'] == today_date:
-        msg = f"✅ Check-in has been already done"
+        msg = f"Next check-in will be tomorrow"
     elif user['lastCheckInDate'] != yes_date:
         user['level'] = 1
         user['streak'] = 1
@@ -154,7 +167,7 @@ def checkin():
         user['streak'] += 1
         if user['streak']>user['bestStreak']:
             user['bestStreak'] = user['streak']
-        msg = f"🎉 {user['level']} Reached Lvl {user['level']}"
+        msg = f"🎉 {user['username']} reached lvl {user['level']}"
 
     db.reference('users').child(user_key).update(user)
     return jsonify({"replies": [{"message": msg}]}), 200
@@ -199,6 +212,97 @@ def track_milestones():
     return jsonify({"replies": [{"message": message}]}), 200
 
 
+@app.route('/test', methods=['POST'])
+def test(data):
+    if(not data):
+        data = request.json
+    query = data.get('query')
+    
+    # collect details 
+    user_identifier = getUser(query)
+    user_ref = db.reference('users').order_by_child('identifier').equal_to(user_identifier)
+    user_snapshot= user_ref.get()
+    if not user_snapshot:
+        return jsonify({"replies": [{"message": "Please register first"}]}), 200
+    user_key = list(user_snapshot.keys())[0]
+    user = user_snapshot[user_key]
+
+    return jsonify({"replies": [{"message": f"identifier: {user_identifier}"}]}), 200
+
+# OAuth callback route
+@app.route('/oauth2callback')
+def oauth2callback():
+    state = session['state']
+    flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES, state=state)
+    flow.redirect_uri = url_for('oauth2callback', _external=True)
+
+    authorization_response = request.url
+    flow.fetch_token(authorization_response=authorization_response)
+
+    credentials = flow.credentials
+    session['credentials'] = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }
+
+    return redirect(url_for('save_contact'))
+
+# Route to initiate OAuth flow
+@app.route('/authorize')
+def authorize():
+    flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES)
+    flow.redirect_uri = url_for('oauth2callback', _external=True)
+
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true')
+
+    session['state'] = state
+    return redirect(authorization_url)
+
+@app.route('/save_contact', methods=['POST'])
+def save_contact(data):
+    try:
+        # if(not data):
+        #    data = request.json
+        # # Extract contact details from request
+        # sender = data.get('sender')
+        number = data
+        id = "Z" + number[:4]
+        
+        # Initialize Google API credentials and authenticate
+        credentials = Credentials(**session['credentials'])
+
+        service = build('people', 'v1', credentials=credentials)
+        
+        # Create contact structure
+        contact = {
+            'names': [
+                {
+                    'givenName': id
+                }
+            ],
+            'phoneNumbers': [
+                {
+                    'value': number,
+                    'type': 'mobile'
+                }
+            ]
+        }
+        
+        # Save contact to Google Contacts
+        saved_contact = service.people().createContact(body=contact).execute()
+        print("saved")
+        return jsonify({'message': 'Contact saved successfully', 'contact': saved_contact}), 200
+    
+    except Exception as e:
+        print({'error': str(e)})
+        return jsonify({'error': str(e)}), 500
+
 def get_users_with_milestones(field, values):
     users_ref = db.reference('users')
     all_users = users_ref.get()
@@ -242,12 +346,20 @@ def other():
     if words:
         first_word = words[0].lower()
 
-        if first_word == 'register': #use proper regex to avoid syntax errors
-            register(data)
+        if first_word == 'register:': #use proper regex to avoid syntax errors
+            print("register")
+            return register(data)
         elif first_word == 'info':
-            info(data)
+            print("info")
+            return info(data)
         elif first_word == 'milestone':
-            track_milestones(data)
+            return track_milestones()
+        elif first_word == 'checkin':
+            return checkin(data)
+        elif first_word == 'test':
+            return test(data)
+        else:
+            return jsonify({"replies": [{"Enter valid input. Refer manual for commands. Spamming can lead to ban"}]}), 400
 
 @app.route('/any_checkin', methods=['POST'])
 def any_checkin():
@@ -256,6 +368,8 @@ def any_checkin():
 
 @app.route('/')
 def index():
+    
+    
     return '<pre>Nothing to see here.\nCheckout README.md to start.</pre>'
 
 if __name__ == '__main__':
