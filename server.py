@@ -15,11 +15,12 @@ firebase_admin.initialize_app(cred, {
 
 app = Flask(__name__)
 def getUser(query):
+    print(query)
     # smart detection of number 
     if query.get('isGroup'):
-        user_identifier = query.get('groupParticipant')
-    else:
         user_identifier = query.get('sender')
+    else:
+        user_identifier = query.get('groupParticipant')
         
     # if number then clean    
     if user_identifier and not any(char.isdigit() for char in user_identifier):
@@ -79,9 +80,16 @@ def register():
             'bestStreak': 0
         }
         db.reference('users').push(user)
+        
+        info = (
+        "User Card😎\n"
+        f"Level: {user['level']}\n"
+        f"Best Streak: {user['bestStreak']}\n"
+        f"Referral Code: {user['referralCode']} (note it down)\n"
+        )
 
-    response_message = f"🎉 Welcome {user.get('username', '')}!\n Upgraded to lvl {user['level']}🔥"
-    return jsonify({"replies": [{"message": response_message}]}), 200
+    response_message = f"🎉 Welcome {user.get('username', '')}!\n Upgraded to lvl {user['level']}🔥\n"
+    return jsonify({"replies": [{"message": response_message + info}]}), 200
 
 @app.route('/info', methods=['POST'])
 def info():
@@ -95,21 +103,21 @@ def info():
     user_key = list(user_snapshot.keys())[0]
     user = user_snapshot[user_key]
     
-    if not user:
+    if not user_snapshot:
         return jsonify({"replies": [{"message": "Please register first"}]}), 200
     
     data = request.json
     message = data.get('query')
  
     info = (
-    "Info😎\n"
-    f"Username: {user['username']}\n"
-    f"Level: {user['level']}\n"
-    f"Streak: {user['streak']}\n"
-    f"Best Streak: {user['bestStreak']}\n"
-    f"Referral Code: {user['referralCode']}\n"
-    f"Referral Count: {user['referralCount']}\n"
-)
+        "Info😎\n"
+        f"Username: {user['username']}\n"
+        f"Level: {user['level']}\n"
+        f"Streak: {user['streak']}\n"
+        f"Best Streak: {user['bestStreak']}\n"
+        f"Referral Code: {user['referralCode']}\n"
+        f"Referral Count: {user['referralCount']}\n"
+    )
 
     response_message = f"{info}"
     return jsonify({"replies": [{"message": response_message}]}), 200
@@ -146,7 +154,7 @@ def checkin():
         user['streak'] += 1
         if user['streak']>user['bestStreak']:
             user['bestStreak'] = user['streak']
-        msg = f"🎉 Reached Lvl {user['level']}"
+        msg = f"🎉 {user['level']} Reached Lvl {user['level']}"
 
     db.reference('users').child(user_key).update(user)
     return jsonify({"replies": [{"message": msg}]}), 200
@@ -154,14 +162,12 @@ def checkin():
 @app.route('/milestone', methods=['POST'])
 def track_milestones():
     # testing updates 
-    user_id = '699539284744'  
-    user_ref = db.reference(f'users/{user_id}')
-    # Update level
-    user_ref.update({
-        'level': 56
-    })
-    
     # user_id = '699539284744'  
+    # user_ref = db.reference(f'users/{user_id}')
+    # # Update level
+    # user_ref.update({
+    #     'level': 56
+    # })
     
     milestones = {
         'level': [25, 50, 75],
