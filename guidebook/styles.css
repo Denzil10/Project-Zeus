@@ -1,0 +1,84 @@
+body {
+  background: linear-gradient(180deg, #e3b705, #330d0d);
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+}
+
+.intro-header {
+  width: 100%;
+  height: 22em;
+  background: #000;
+  color: rgb(255, 255, 255);
+  display: flex;
+  align-items: center; /* Center items vertically */
+}
+
+.intro-header .logo {
+  height: 100%;
+  flex: 1; /* Take up remaining space */
+  text-align: center; /* Center align content */
+}
+
+.intro-header .logo img {
+  max-height: 100%; /* Ensure image doesn't overflow */
+  max-width: 100%;
+}
+
+.intro-header .intro {
+  flex: 1; /* Take up remaining space */
+  margin: 0 15px; /* Add some margin */
+  display: flex;
+  align-items: center; /* Center content vertically */
+}
+
+.join-header {
+  padding: 30px 0;
+  text-align: center;
+  color: rgb(255, 255, 255);
+}
+
+.join-header blockquote {
+  font-style: italic;
+  margin-top: 20px;
+}
+
+.media-container {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.media-container .media {
+  flex: 1 1 45%;
+  margin: 15px;
+}
+
+.guides {
+  margin-top: 50px;
+  color: black;
+}
+
+.guides h2 {
+  margin-bottom: 30px;
+}
+
+.guide-link {
+  margin-bottom: 20px;
+}
+
+.modal-xl {
+  max-width: 90%;
+}
+
+.reward-row {
+  width: 100%;
+  height: 30em;
+  background: url(./rewards.svg) center/cover no-repeat;
+}
+
+
+@media (max-width: 768px) {
+  .media-container .media {
+    width: 100%;
+  }
+}

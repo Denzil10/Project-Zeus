@@ -1,0 +1,3 @@
+## Privacy Policy
+
+Your privacy is important to us. All shared information stays within the group and is used responsibly. Participation is voluntary, and you can withdraw at any time. By participating, you consent to us tracking your check-ins and sharing your data with potential sponsors to secure rewards, subject to availability. We only share data with trusted partners aligned with our community values. 
