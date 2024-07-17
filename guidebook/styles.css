@@ -1,84 +1,112 @@
 body {
   background: linear-gradient(180deg, #e3b705, #330d0d);
   margin: 0;
+  padding: 0;
   font-family: 'Arial', sans-serif;
+  color: #fff;
 }
 
-.intro-header {
+#intro{
   width: 100%;
-  height: 22em;
-  background: #000;
-  color: rgb(255, 255, 255);
-  display: flex;
-  align-items: center; /* Center items vertically */
+  background: rgba(0, 0, 0);
+  padding: 0 5em;
 }
 
-.intro-header .logo {
+#intro .logo{
+  width: 100%;
+  max-height: 20em;
+}
+
+#intro .logo img {
+  width: 100%;
   height: 100%;
-  flex: 1; /* Take up remaining space */
-  text-align: center; /* Center align content */
+  object-fit: fill;
 }
 
-.intro-header .logo img {
-  max-height: 100%; /* Ensure image doesn't overflow */
-  max-width: 100%;
-}
-
-.intro-header .intro {
-  flex: 1; /* Take up remaining space */
-  margin: 0 15px; /* Add some margin */
+#intro .text{
   display: flex;
-  align-items: center; /* Center content vertically */
-}
-
-.join-header {
-  padding: 30px 0;
+  flex-direction: column;
+  justify-content: center;
   text-align: center;
-  color: rgb(255, 255, 255);
+  margin-top: 1em;
+  font-size: .8em;
 }
 
-.join-header blockquote {
+#media-container{
+  padding: 0 5em;  
+  display: flex;
+  justify-content: center;
+}
+
+.media {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#guide_container {
+  margin-top: 80px;
+  color: black;
+  font-size: 3em;
+  
+}
+
+.modal-xl {
+  color: black;
+  max-width: 90%;
+}
+
+
+.blockquote {
   font-style: italic;
   margin-top: 20px;
 }
 
-.media-container {
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
+.join{
+  width: 100%;
+  padding: 30px 0;
+  text-align: center;
+  justify-content: center;
 }
 
-.media-container .media {
-  flex: 1 1 45%;
-  margin: 15px;
+.bg-black {
+  background-color: #000000 !important;
+  color: #ffffff;
+}
+/* Custom CSS for additional styling if needed */
+#whatsapp {
+  font-weight: 600;
+  width: 250px;
+  border-radius: 30px;
+  text-align: center;
+  transition: background-color 0.3s ease;
 }
 
-.guides {
-  margin-top: 50px;
-  color: black;
+#whatsapp:hover {
+  background-color: #1ebe5d;
+  text-decoration: none;
 }
 
-.guides h2 {
-  margin-bottom: 30px;
+#whatsapp i {
+  margin-right: 8px;
 }
 
-.guide-link {
-  margin-bottom: 20px;
-}
-
-.modal-xl {
-  max-width: 90%;
-}
-
-.reward-row {
+.reward {
+  /* background: rgba(0, 0, 0); */
   width: 100%;
   height: 30em;
-  background: url(./rewards.svg) center/cover no-repeat;
 }
 
+.reward img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
 
 @media (max-width: 768px) {
   .media-container .media {
     width: 100%;
+    margin: 5px 0;
   }
 }
+

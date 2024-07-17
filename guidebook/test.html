@@ -1,53 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Habit Building Community</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <link rel="stylesheet" href="./styles.css">
-  <!-- highlight.js -->
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Building Community</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <!-- highlight.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/highlight.min.js"></script>
   <!-- marked.js -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
-  <header class="intro-header">
-    <div class="intro">
-      <h3>What is this community?</h3>
-      <p>This community is dedicated to...</p>
+<header class="d-flex flex-column flex-md-row" id="intro">
+  <div class="logo col-md-6"><img src="./logo.png" class="img-fluid"></div>
+  <div class="text col-md-6 flex-column justify-content-centre">
+    <h3>What is this community about?</h3>
+    <p>
+      Project Zeus is dedicated to personal growth and habit formation. Join us to start new routines, break bad habits, and achieve personal milestones with community support.
+    </p>
+  </div>
+</header>
+
+<div id="media-container" class="d-flex flex-column flex-md-row mt-4 justify-content-centre" >
+  <div class="media col-md-6">
+    <div class="embed-responsive embed-responsive-16by9">
+      <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/d2oyblEiL08" allowfullscreen></iframe>
     </div>
-    <div class="logo"><img src="./logo.png" class ="img-fluid"> </div>
-  </header>
+  </div>
 
-  <section class="container">
-    <div class="media-container mt-4">
-
-      <div class="media">
-        <div class="embed-responsive embed-responsive-16by9">
-          <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/d2oyblEiL08" allowfullscreen></iframe>
-        </div>
+  <div class="media col-md-6 text-center">
+    <div id="guide-container" class="mt-4 ">
+      <h2>How to Start</h2>
+      <div class="guide">
+        <p class="mt-2">A quick start guide for beginners. Takes just 2 minutes to read.</p>
+        <button id="guide-btn" class="btn btn-success btn-lg mb-3">Beginner Guide</button>
       </div>
-
-      <div class="media">
-        <div class="guides mt-4 text-center">
-          <h2>How to Start</h2>
-          <div class="guide-link">
-            <p class="mt-2">A quick start guide for beginners. Takes just 2 minutes to read.</p>
-            <button id="guide-btn" class="btn btn-primary btn-lg">Beginner Guide</button>
-          </div>
-          <div class="guide-link">
-            <p class="mt-2">An advanced guide for pro users.</p>
-            <a href="./pro.md" class="btn btn-success btn-lg">Pro Guide</a>
-          </div>
-        </div>
+      <div class="guide">
+        <p class="mt-2">An advanced guide for pro users.</p>
+        <a href="" class="btn btn-dark btn-lg mb-3">Pro Guide</a>
       </div>
-
     </div>
-  </section>
+  </div>
+
+</div>
   
-  <section class="join-header">
+  
+  <section class="join d-flex flex-column align-items-center ">
+    <h2>JOIN OUR FREE COMMUNITY</h2>
+    <a href="" class="btn btn-success btn-lg d-flex justify-content-center align-items-center" id="whatsapp" target="_blank">
+      <i class="fa fa-whatsapp mr-2"></i> JOIN
+    </a>
+  </section>
+
+  <section class="text-center p-4 bg-black" id="">
     <h2>Most Accountable Habit-Building Community</h2>
     <blockquote class="blockquote">
       <p class="mb-0">“Every action you take is a vote for the type of person you wish to become.”</p>
@@ -55,9 +63,9 @@
     </blockquote>
   </section>
 
-  <header class="reward-row">
-    <!-- <img src="./rewards.jpg" class="img-fluid rounded" alt="Reward Tiers"> -->
-  </header>
+  <footer class="reward d-flex justify-content-center align-items-center">
+    <img src="./reward.png" class="img-fluid" alt="Reward Tiers">
+  </footer>
   
   <!-- Modal -->
   <div class="modal fade" id="guideModal" tabindex="-1" aria-labelledby="guideModalLabel" aria-hidden="true">
