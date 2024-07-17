@@ -76,7 +76,7 @@ body {
 /* Custom CSS for additional styling if needed */
 #whatsapp {
   font-weight: 600;
-  width: 250px;
+  width: 210px;
   border-radius: 30px;
   text-align: center;
   transition: background-color 0.3s ease;
@@ -88,6 +88,7 @@ body {
 }
 
 #whatsapp i {
+  font-size: 30px;
   margin-right: 8px;
 }
 
