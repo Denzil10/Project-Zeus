@@ -33,7 +33,7 @@ body {
 }
 
 #media-container{
-  padding: 0 4em;  
+  padding: 0 3em;  
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -50,6 +50,7 @@ body {
   margin-top: 120px;
   color: black;
   font-size: 3em;
+  padding-top: 15px;
   
 }
 
@@ -107,7 +108,7 @@ body {
   object-fit: fill;
 }
 
-@media (max-width: 768px) {
+@media only screen and (max-width: 768px) {
   #media-container{
     padding: 10px;
   }
